@@ -454,6 +454,12 @@ export default function DashboardPage() {
           >
             Search Threat Information for Other Locations
           </button>
+           <button 
+            onClick={() => router.push('/map')}
+            className="bg-gradient-to-r from-blue-600 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-teal-700 transition-all ml-5"
+          >
+            Choose directly from the map
+          </button>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -631,6 +637,8 @@ export default function DashboardPage() {
             {renderMainContent()}
           </div>
         </main>
+
+        
       </div>
 
       {/* Notification Sidebar */}
@@ -688,3 +696,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
+
+
