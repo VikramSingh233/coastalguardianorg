@@ -2,6 +2,7 @@
 // pages/contact.js
 import { useState } from 'react';
 import Head from 'next/head';
+import {useRouter} from 'next/navigation'
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ export default function ContactPage() {
     description: ''
   });
 
+  const router = useRouter();
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -54,10 +56,10 @@ export default function ContactPage() {
           <nav className="hidden md:flex space-x-6">
             <a href="/" className="text-gray-600 hover:text-blue-600">Home</a>
             <a href="/" className="text-gray-600 hover:text-blue-600">Services</a>
-            <a href="/" className="text-gray-600 hover:text-blue-600">About</a>
+            {/* <a href="/" className="text-gray-600 hover:text-blue-600">About</a> */}
             <a href="/contact" className="text-blue-600 font-medium">Contact</a>
           </nav>
-          <button onClick={()=>router.push('/registration')} className="bg-gradient-to-r from-blue-600 to-teal-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-teal-700 transition-all">
+          <button onClick={()=>router.push('/auth')} className="bg-gradient-to-r from-blue-600 to-teal-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-teal-700 transition-all">
             Sign In
           </button>
         </div>

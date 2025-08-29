@@ -32,7 +32,7 @@ export default function HomePage() {
        
             <a href="/contact" className="text-gray-600 hover:text-blue-600">Contact</a>
           </nav>
-          <button className="bg-gradient-to-r from-blue-600 to-teal-600 cursor-pointer text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-teal-700 transition-all">
+          <button onClick={() => router.push('/auth')} className="bg-gradient-to-r from-blue-600 to-teal-600 cursor-pointer text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-teal-700 transition-all">
             Sign In
           </button>
         </div>
@@ -52,7 +52,7 @@ export default function HomePage() {
             Advanced machine learning technology to predict and alert about coastal threats including flooding, cyclones, and sea level rise.
           </p>
           <div className="flex flex-wrap justify-center gap-6">
-            <button onClick={() => router.push('/registration')} className="bg-gradient-to-r from-blue-600 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-teal-700  cursor-pointer transition-all transform hover:-translate-y-1 shadow-lg">
+            <button onClick={() => router.push('/auth')} className="bg-gradient-to-r from-blue-600 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-teal-700  cursor-pointer transition-all transform hover:-translate-y-1 shadow-lg">
               Get Started
             </button>
             <button onClick={() => window.scrollTo({ top: 450, behavior: 'smooth' })} className="bg-white text-blue-600 border border-blue-600 px-6 cursor-pointer py-3 rounded-lg hover:bg-blue-50 transition-all">
@@ -259,7 +259,7 @@ export default function HomePage() {
           <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-10">
             Join thousands of users who trust COAS-TAL Guardian to keep them informed and safe from coastal threats.
           </p>
-          <button onClick={()=>{router.push('/registration')}} className="bg-gradient-to-r from-blue-600 to-teal-600 text-white px-8 py-4 rounded-lg hover:from-blue-700 hover:to-teal-700 transition-all transform hover:-translate-y-1 shadow-lg text-lg font-semibold cursor-pointer">
+          <button onClick={()=>{router.push('/auth')}} className="bg-gradient-to-r from-blue-600 to-teal-600 text-white px-8 py-4 rounded-lg hover:from-blue-700 hover:to-teal-700 transition-all transform hover:-translate-y-1 shadow-lg text-lg font-semibold cursor-pointer">
             Get Started Today
           </button>
         </div>
@@ -287,7 +287,7 @@ export default function HomePage() {
             <div>
               <h4 className="font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Services</a></li>
+                <li><a href="/" className="hover:text-white transition-colors">Services</a></li>
                 {/* <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Blog</a></li> */}
                 <li><a href="/contact" className="hover:text-white transition-colors">Contact</a></li>

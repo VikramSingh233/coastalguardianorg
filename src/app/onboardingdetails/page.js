@@ -21,7 +21,28 @@ export default function OnboardingPage() {
     }
   });
   const router = useRouter();
+const states = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
+  "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+  "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+];
+  const [query, setQuery] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
 
+  const filteredStates = states.filter((state) =>
+    state.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const handleSelect = (state) => {
+    setFormData({ ...formData, state });
+    setQuery(state);
+    setShowDropdown(false);
+  };
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
@@ -158,10 +179,7 @@ export default function OnboardingPage() {
                     required
                   >
                     <option value="">Select your country</option>
-                    <option value="USA">United States</option>
-                    <option value="UK">United Kingdom</option>
-                    <option value="Canada">Canada</option>
-                    <option value="Australia">Australia</option>
+                    
                     <option value="India">India</option>
                   </select>
                 </div>
@@ -170,15 +188,34 @@ export default function OnboardingPage() {
                     State/Province
                   </label>
                   <input
-                    id="state"
-                    type="text"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all text-black"
-                    placeholder="Enter your state or province"
-                    required
-                  />
+        id="state"
+        type="text"
+        name="state"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setFormData({ ...formData, state: e.target.value });
+          setShowDropdown(true);
+        }}
+        onFocus={() => setShowDropdown(true)}
+        placeholder="Enter your state or select"
+        required
+        className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all text-black"
+      />
+
+      {showDropdown && filteredStates.length > 0 && (
+        <ul className="absolute z-10 w-full text-black mt-1 bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto shadow-lg">
+          {filteredStates.map((state) => (
+            <li
+              key={state}
+              onClick={() => handleSelect(state)}
+              className="px-4 py-2 cursor-pointer hover:bg-blue-100"
+            >
+              {state}
+            </li>
+          ))}
+        </ul>
+      )}
                 </div>
                 <div>
                   <label className="block text-gray-700 mb-2" htmlFor="organization">
