@@ -436,7 +436,7 @@ export default function DashboardPage() {
     return (
       <div>
         <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Welcome to COAS-TAL Guardian</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Welcome to COASTAL Guardian</h2>
           <p className="text-gray-700 mb-6">
             Your personalized coastal threat dashboard. Monitor alerts, check conditions in your area, and stay informed about potential risks.
           </p>
@@ -500,7 +500,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       <Head>
-        <title>Dashboard - COAS-TAL Guardian</title>
+        <title>Dashboard - COASTAL Guardian</title>
         <meta name="description" content="Coastal threat monitoring dashboard" />
       </Head>
 
@@ -522,7 +522,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                 </svg>
               </div>
-              <h1 className="text-xl font-bold text-gray-800">COAS-TAL Guardian</h1>
+              <h1 className="text-xl font-bold text-gray-800">COASTAL Guardian</h1>
             </div>
           </div>
           
