@@ -38,8 +38,8 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-teal-100">
       <Head>
-        <title>Contact Us - COAS-TAL Guardian</title>
-        <meta name="description" content="Contact the COAS-TAL Guardian team for support or inquiries" />
+        <title>Contact Us - COASTAL Guardian</title>
+        <meta name="description" content="Contact the COASTAL Guardian team for support or inquiries" />
       </Head>
 
       {/* Header */}
@@ -51,7 +51,7 @@ export default function ContactPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-800">COAS-TAL Guardian</h1>
+            <h1 className="text-2xl font-bold text-gray-800">COASTAL Guardian</h1>
           </div>
           <nav className="hidden md:flex space-x-6">
             <a href="/" className="text-gray-600 hover:text-blue-600">Home</a>
@@ -306,7 +306,7 @@ export default function ContactPage() {
         <div className="container mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-xl font-semibold mb-4">COAS-TAL Guardian</h3>
+              <h3 className="text-xl font-semibold mb-4">COASTAL Guardian</h3>
               <p className="text-gray-400">
                 Advanced ML-powered coastal threat detection and alert system.
               </p>
@@ -340,7 +340,7 @@ export default function ContactPage() {
             </div>
           </div>
           <div className="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400">© 2023 COAS-TAL Guardian. All rights reserved.</p>
+            <p className="text-gray-400">© 2023 COASTAL Guardian. All rights reserved.</p>
             <div className="flex space-x-4 mt-4 md:mt-0">
               <a href="#" className="text-gray-400 hover:text-white transition-colors">
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
