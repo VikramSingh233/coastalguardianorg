@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -14,6 +15,32 @@ export default function DashboardPage() {
     country: '',
     state: ''
   });
+
+const getuser = async () => {
+  try {
+    // get logged-in user info
+    const res = await fetch("/api/checkjwt");
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error);
+
+    // pass email as query param
+    const userRes = await fetch(`/api/getme?email=${data.user.email}`);
+    const data2 = await userRes.json();
+
+    if (!userRes.ok) throw new Error(data2.error);
+
+    setUserData(data2.user);
+    console.log(data2.user);
+  } catch (err) {
+    console.error("Error fetching user:", err.message);
+  }
+};
+
+  useEffect(() => {
+    getuser();
+  }, []);
+
   const [searchResults, setSearchResults] = useState(null);
   const [userData, setUserData] = useState({
     name: 'John Doe',
@@ -22,12 +49,15 @@ export default function DashboardPage() {
     country: 'United States',
     state: 'California',
     organization: 'Coastal Research Institute',
-    notifications: {
-      flooding: true,
+    notificationPreference
+: {
+      floodingAlerts: true,
       cyclonicalActivity: true,
       seaLevelRise: false
     }
   });
+
+
   const [editFormData, setEditFormData] = useState({ ...userData });
   
   const router = useRouter();
@@ -39,6 +69,18 @@ export default function DashboardPage() {
     { id: 3, type: 'seaLevelRise', title: 'Long-term Sea Level Advisory', location: 'Bay Area', severity: 'low', time: '1 day ago' },
   ];
   
+    async function logout(){
+      const res = await fetch("/api/logout");
+      
+      
+      if(res.ok){
+        toast.success("Logout successful!");
+      }
+      else{
+        toast.error("Logout failed!");
+      }
+      router.push('/auth');
+  }
   // Simulated notifications data
   const notificationsData = [
     { id: 1, type: 'alert', title: 'New Flood Warning', content: 'Flood warning issued for your area.', time: '10 mins ago', read: false },
@@ -58,8 +100,8 @@ export default function DashboardPage() {
     if (type === 'checkbox') {
       setEditFormData({
         ...editFormData,
-        notifications: {
-          ...editFormData.notifications,
+        notificationPreference: {
+          ...editFormData.notificationPreference,
           [name]: checked
         }
       });
@@ -79,11 +121,12 @@ export default function DashboardPage() {
     });
   };
   
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile =async (e) => {
     e.preventDefault();
     setUserData({ ...editFormData });
     setEditMode(false);
-    // In a real app, we would send this data to an API
+    console.log("Updated user data:", editFormData);
+    const res = await fetch('/api/details', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editFormData) });
   };
   
   const handleSearch = (e) => {
@@ -156,7 +199,7 @@ export default function DashboardPage() {
                   name="name"
                   value={editFormData.name}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-lg bg-gray-50 text-black border border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                   required
                 />
               </div>
@@ -170,7 +213,7 @@ export default function DashboardPage() {
                   name="email"
                   value={editFormData.email}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border text-black border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                   required
                 />
               </div>
@@ -184,7 +227,7 @@ export default function DashboardPage() {
                   name="contactNumber"
                   value={editFormData.contactNumber}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border text-black border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                   required
                 />
               </div>
@@ -198,7 +241,7 @@ export default function DashboardPage() {
                   name="organization"
                   value={editFormData.organization}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border text-black border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                 />
               </div>
               <div>
@@ -211,7 +254,7 @@ export default function DashboardPage() {
                   name="country"
                   value={editFormData.country}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border text-black border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                   required
                 />
               </div>
@@ -225,21 +268,22 @@ export default function DashboardPage() {
                   name="state"
                   value={editFormData.state}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border text-black border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                   required
                 />
               </div>
             </div>
             
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Notification Preferences</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Notification Preference</h3>
               <div className="space-y-3">
                 <div className="flex items-center">
                   <input
                     id="flooding"
                     type="checkbox"
                     name="flooding"
-                    checked={editFormData.notifications.flooding}
+                    checked={editFormData.notificationPreference
+.floodingAlerts}
                     onChange={handleInputChange}
                     className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
                   />
@@ -252,7 +296,8 @@ export default function DashboardPage() {
                     id="cyclonicalActivity"
                     type="checkbox"
                     name="cyclonicalActivity"
-                    checked={editFormData.notifications.cyclonicalActivity}
+                    checked={editFormData.notificationPreference
+.cyclonicalActivity}
                     onChange={handleInputChange}
                     className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
                   />
@@ -265,7 +310,8 @@ export default function DashboardPage() {
                     id="seaLevelRise"
                     type="checkbox"
                     name="seaLevelRise"
-                    checked={editFormData.notifications.seaLevelRise}
+                    checked={editFormData.notificationPreference
+.seaLevelRise}
                     onChange={handleInputChange}
                     className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
                   />
@@ -328,19 +374,25 @@ export default function DashboardPage() {
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Notification Preferences</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Notification Preference</h3>
             <div className="space-y-2">
               <div className="flex items-center">
-                <div className={`w-3 h-3 rounded-full mr-2 ${userData.notifications.flooding ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                <span className="text-gray-700">Flooding Alerts: {userData.notifications.flooding ? 'Enabled' : 'Disabled'}</span>
+                <div className={`w-3 h-3 rounded-full mr-2 ${userData.notificationPreference
+.floodingAlerts ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                <span className="text-gray-700">Flooding Alerts: {userData.notificationPreference
+.floodingAlerts ? 'Enabled' : 'Disabled'}</span>
               </div>
               <div className="flex items-center">
-                <div className={`w-3 h-3 rounded-full mr-2 ${userData.notifications.cyclonicalActivity ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                <span className="text-gray-700">Cyclonical Activity Alerts: {userData.notifications.cyclonicalActivity ? 'Enabled' : 'Disabled'}</span>
+                <div className={`w-3 h-3 rounded-full mr-2 ${userData.notificationPreference
+.cyclonicalActivity ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                <span className="text-gray-700">Cyclonical Activity Alerts: {userData.notificationPreference
+.cyclonicalActivity ? 'Enabled' : 'Disabled'}</span>
               </div>
               <div className="flex items-center">
-                <div className={`w-3 h-3 rounded-full mr-2 ${userData.notifications.seaLevelRise ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                <span className="text-gray-700">Sea Level Rise Updates: {userData.notifications.seaLevelRise ? 'Enabled' : 'Disabled'}</span>
+                <div className={`w-3 h-3 rounded-full mr-2 ${userData.notificationPreference
+.seaLevelRise ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                <span className="text-gray-700">Sea Level Rise Updates: {userData.notificationPreference
+.seaLevelRise ? 'Enabled' : 'Disabled'}</span>
               </div>
             </div>
           </div>
@@ -543,12 +595,7 @@ export default function DashboardPage() {
               <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full"></span>
             </button>
             
-            <div className="hidden md:flex items-center">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-teal-500 rounded-full flex items-center justify-center text-white font-semibold mr-2">
-                {userData.name.charAt(0)}
-              </div>
-              <span className="text-gray-700">{userData.name}</span>
-            </div>
+        
           </div>
         </div>
       </header>
@@ -619,7 +666,7 @@ export default function DashboardPage() {
             
             <div className="pt-4 border-t border-gray-200">
               <button 
-                onClick={() => router.push('/')}
+                onClick={() => logout()}
                 className="w-full flex items-center px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-all"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

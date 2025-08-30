@@ -2,6 +2,8 @@
 // pages/onboarding.js
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import axios from 'axios';
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
@@ -14,8 +16,8 @@ export default function OnboardingPage() {
     country: '',
     state: '',
     organization: '',
-    notifications: {
-      flooding: false,
+    notificationPreference: {
+      floodingAlerts: false,
       cyclonicalActivity: false,
       seaLevelRise: false
     }
@@ -43,14 +45,16 @@ const states = [
     setQuery(state);
     setShowDropdown(false);
   };
+
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
     if (type === 'checkbox') {
       setFormData({
         ...formData,
-        notifications: {
-          ...formData.notifications,
+        notificationPreference: {
+          ...formData.notificationPreference,
           [name]: checked
         }
       });
@@ -62,17 +66,47 @@ const states = [
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (step < 3) {
-      setStep(step + 1);
-    } else {
-      // Handle form submission
-      console.log('Onboarding data:', formData);
-      // Redirect to dashboard after completion
-      // router.push('/dashboard');
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    const res = await fetch("/api/checkjwt", {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const data = await res.json();
+    // console.log(data.user.email);
+    formData.email = data.user.email;
+  } catch (error) {
+    
+  }
+
+  if (step < 3) {
+    setStep(step + 1);
+  } else {
+    try {
+      const res = await fetch("/api/details", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),  // ✅ send full formData
+      });
+
+      const data = await res.json();
+
+      if (res.status === 200) {
+        toast.success("Onboarding complete! Redirecting to dashboard...");
+        router.push("/dashboard");
+      } else {
+        toast.error(data.error || "Something went wrong");
+      }
+    } catch (error) {
+      toast.error("Error submitting data: " + error.message);
     }
-  };
+  }
+};
+
+
 
   const handlePrevious = () => {
     if (step > 1) {
@@ -249,8 +283,8 @@ const states = [
                     <input
                       id="flooding"
                       type="checkbox"
-                      name="flooding"
-                      checked={formData.notifications.flooding}
+                      name="floodingAlerts"
+                      checked={formData.notificationPreference.floodingAlerts}
                       onChange={handleInputChange}
                       className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
                     />
@@ -265,7 +299,7 @@ const states = [
                       id="cyclonicalActivity"
                       type="checkbox"
                       name="cyclonicalActivity"
-                      checked={formData.notifications.cyclonicalActivity}
+                      checked={formData.notificationPreference.cyclonicalActivity}
                       onChange={handleInputChange}
                       className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
                     />
@@ -280,7 +314,7 @@ const states = [
                       id="seaLevelRise"
                       type="checkbox"
                       name="seaLevelRise"
-                      checked={formData.notifications.seaLevelRise}
+                      checked={formData.notificationPreference.seaLevelRise}
                       onChange={handleInputChange}
                       className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
                     />

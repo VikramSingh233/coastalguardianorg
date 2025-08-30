@@ -2,7 +2,8 @@
 // pages/auth.js
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-
+import axios from 'axios';
+import toast from "react-hot-toast";
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
@@ -20,19 +21,40 @@ export default function AuthPage() {
     });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (isLogin) {
-      // Handle login logic
-      console.log('Login data:', { email: formData.email, password: formData.password });
-      // Redirect to dashboard after login
-      // router.push('/dashboard');
-    } else {
-      // Handle signup logic and redirect to onboarding
-      console.log('Signup data:', formData);
-      router.push('/onboardingdetails');
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (isLogin) {
+    try {
+      await axios.post("/api/login", {
+        email: formData.email,
+        password: formData.password,
+      });
+      toast.success("Login successful!");
+      router.push("/onboardingdetails");
+    } catch (err) {
+      // console.error(err.response?.data || err.message);
+      toast.error("Login failed");
     }
-  };
+  } else {
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    try {
+      await axios.post("/api/signup", {
+        email: formData.email,
+        password: formData.password,
+      });
+      toast.success("Signup successful!");
+      router.push("/auth");
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      toast.error("Signup failed");
+    }
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-teal-100 p-4">
