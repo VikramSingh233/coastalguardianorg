@@ -1,13 +1,167 @@
 // pages/index.js
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { WEATHER_CONFIG, WEATHER_ICONS, WEATHER_ALERTS } from '../config/weather';
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState('flooding');
+  const [weatherData, setWeatherData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [location, setLocation] = useState('');
+  const [showLocationModal, setShowLocationModal] = useState(false);
   const router =  useRouter();
+
+
+
+  const fetchWeatherData = async (city) => {
+    if (!city || city.trim() === '') {
+      alert('Please enter a city name');
+      return;
+    }
+    
+    setLoading(true);
+    console.log(`🌤️ Fetching weather data for: ${city}`);
+    
+    try {
+      // Using OpenWeatherMap API for real weather data
+      const apiKey = WEATHER_CONFIG.OPENWEATHER_API_KEY;
+      console.log(`🔑 Using API key: ${apiKey.substring(0, 8)}...`);
+      
+      // Fetch current weather
+      const weatherUrl = `${WEATHER_CONFIG.OPENWEATHER_BASE_URL}/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=${WEATHER_CONFIG.UNITS}`;
+      console.log(`📡 Weather API URL: ${weatherUrl}`);
+      
+      const response = await fetch(weatherUrl);
+      console.log(`📊 Weather API Response Status: ${response.status}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Weather API Error: ${response.status} - ${errorText}`);
+        throw new Error(`Weather API Error: ${response.status} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log(`✅ Weather data received:`, data);
+      
+      // Fetch 5-day forecast for additional data
+      const forecastUrl = `${WEATHER_CONFIG.OPENWEATHER_BASE_URL}/forecast?q=${encodeURIComponent(city)}&appid=${apiKey}&units=${WEATHER_CONFIG.UNITS}`;
+      console.log(`📡 Forecast API URL: ${forecastUrl}`);
+      
+      const forecastResponse = await fetch(forecastUrl);
+      console.log(`📊 Forecast API Response Status: ${forecastResponse.status}`);
+      
+      if (forecastResponse.ok) {
+        const forecastData = await forecastResponse.json();
+        console.log(`✅ Forecast data received:`, forecastData);
+        
+        // Get hourly precipitation data
+        const hourlyData = forecastData.list.slice(0, 8); // Next 24 hours
+        const totalPrecipitation = hourlyData.reduce((sum, item) => {
+          const rain1h = item.rain?.['1h'] || 0;
+          const rain3h = item.rain?.['3h'] || 0;
+          return sum + Math.max(rain1h, rain3h);
+        }, 0);
+        
+        // Combine weather and forecast data with enhanced precipitation and visibility handling
+        const combinedData = {
+          ...data,
+          forecast: forecastData,
+          hourlyPrecipitation: totalPrecipitation,
+          hourlyData: hourlyData,
+          // Ensure city name is properly set
+          cityName: data.name || city.split(',')[0],
+          // Enhanced precipitation data - ensure it updates with location
+          currentPrecipitation: data.rain?.['1h'] || data.rain?.['3h'] || 0,
+          // Enhanced visibility data - ensure it updates with location
+          visibility: data.visibility || 10000, // Default to 10km if not available
+          // Additional weather info
+          weatherDescription: data.weather?.[0]?.description || 'Unknown',
+          weatherIcon: data.weather?.[0]?.icon || '01d',
+          // Add timestamp for debugging
+          lastUpdated: new Date().toISOString(),
+          // Add location info for debugging
+          requestedLocation: city
+        };
+        
+        console.log(`🎯 Combined weather data for ${city}:`, combinedData);
+        console.log(`🌧️ Precipitation: ${combinedData.currentPrecipitation}mm`);
+        console.log(`👁️ Visibility: ${combinedData.visibility}m`);
+        setWeatherData(combinedData);
+      } else {
+        console.log(`⚠️ Forecast API failed, using only current weather data`);
+        // Enhanced current weather data
+        const enhancedData = {
+          ...data,
+          cityName: data.name || city.split(',')[0],
+          currentPrecipitation: data.rain?.['1h'] || data.rain?.['3h'] || 0,
+          visibility: data.visibility || 10000,
+          weatherDescription: data.weather?.[0]?.description || 'Unknown',
+          weatherIcon: data.weather?.[0]?.icon || '01d',
+          hourlyPrecipitation: 0,
+          lastUpdated: new Date().toISOString(),
+          requestedLocation: city
+        };
+        console.log(`🎯 Enhanced weather data for ${city}:`, enhancedData);
+        console.log(`🌧️ Precipitation: ${enhancedData.currentPrecipitation}mm`);
+        console.log(`👁️ Visibility: ${enhancedData.visibility}m`);
+        setWeatherData(enhancedData);
+      }
+    } catch (error) {
+      console.error('Error fetching weather data:', error);
+      
+      // Show error message to user
+      alert(`Failed to get weather data for ${city}. Please check your API key and try again.`);
+      
+      // Don't set fallback data - let user know there's an issue
+      setWeatherData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Don't set any default location - let user choose
+    setLocation('');
+  }, []);
+
+  // Remove automatic fetching when location changes
+  // Users will manually fetch weather data
+
+  const handleLocationChange = (e) => {
+    setLocation(e.target.value);
+  };
+
+  const getWeatherIcon = (iconCode) => {
+    return WEATHER_ICONS[iconCode] || '🌤️';
+  };
+
+  // Check for weather alerts
+  const getWeatherAlerts = () => {
+    if (!weatherData) return [];
+    
+    const alerts = [];
+    if (weatherData.main?.temp > WEATHER_ALERTS.HIGH_TEMP) {
+      alerts.push({ type: 'high-temp', message: 'High temperature alert' });
+    }
+    if (weatherData.visibility < WEATHER_ALERTS.LOW_VISIBILITY) {
+      alerts.push({ type: 'low-visibility', message: 'Low visibility warning' });
+    }
+    if (weatherData.wind?.speed > WEATHER_ALERTS.HIGH_WIND) {
+      alerts.push({ type: 'high-wind', message: 'High wind speed alert' });
+    }
+    if (weatherData.main?.humidity > WEATHER_ALERTS.HIGH_HUMIDITY) {
+      alerts.push({ type: 'high-humidity', message: 'High humidity alert' });
+    }
+    if (weatherData.currentPrecipitation > WEATHER_ALERTS.HIGH_PRECIPITATION) {
+      alerts.push({ type: 'high-precipitation', message: 'Heavy rainfall alert' });
+    }
+    
+    return alerts;
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-teal-100">
       <Head>
@@ -213,6 +367,403 @@ export default function HomePage() {
               </div>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* Weather Dashboard Section */}
+      <section className="py-16 px-4 bg-gradient-to-br from-blue-50 to-cyan-100">
+        <div className="container mx-auto">
+          <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Coastal Weather Dashboard</h2>
+          <p className="text-center text-gray-600 mb-8 max-w-2xl mx-auto">
+            Real-time weather monitoring for coastal areas with comprehensive parameters including air temperature, humidity, sea surface temperature, precipitation, and visibility.
+          </p>
+          <p className="text-center text-blue-600 mb-8 max-w-2xl mx-auto font-medium">
+            💡 Enter a city name and click "Get Weather" to see real-time data
+          </p>
+          
+          {/* Step Indicator */}
+          <div className="flex justify-center mb-8">
+            <div className="flex items-center space-x-4">
+              <div className={`flex items-center space-x-2 ${location ? 'text-blue-600' : 'text-gray-400'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${location ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                  1
+                </div>
+                <span className="font-medium">Select City</span>
+              </div>
+              <div className="w-8 h-1 bg-gray-200"></div>
+              <div className={`flex items-center space-x-2 ${weatherData ? 'text-blue-600' : 'text-gray-400'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${weatherData ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                  2
+                </div>
+                <span className="font-medium">View Parameters</span>
+              </div>
+            </div>
+          </div>
+          
+                    {/* Location Selector */}
+          <div className="flex flex-col items-center mb-8 space-y-4">
+                                {/* Current City Display */}
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-2">🌍 Current City</p>
+              {location ? (
+                <>
+                  <p className="text-lg font-semibold text-blue-600">
+                    {weatherData?.cityName || weatherData?.name || location}
+                  </p>
+                  {weatherData?.sys?.country && (
+                    <p className="text-sm text-gray-500">
+                      {weatherData.sys.country}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-lg font-semibold text-gray-400">
+                  No location selected
+                </p>
+              )}
+            </div>
+            
+            {/* Location Controls */}
+            <div className="flex flex-wrap justify-center items-center gap-4">
+              <button
+                onClick={() => setShowLocationModal(!showLocationModal)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <span>🌍</span>
+                <span>Popular Cities</span>
+              </button>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={location}
+                  onChange={handleLocationChange}
+                  placeholder="Enter city name (e.g., Mumbai, Chennai, Miami)"
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[250px] text-gray-900 bg-white"
+                />
+                <button
+                  onClick={() => fetchWeatherData(location)}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Get Weather
+                </button>
+                <button
+                  onClick={() => fetchWeatherData(location)}
+                  disabled={loading}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  <span>{loading ? '⏳' : '🔄'}</span>
+                  <span>{loading ? 'Loading...' : 'Refresh'}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setLocation('');
+                    setWeatherData(null);
+                  }}
+                  className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                >
+                  <span>🗑️</span>
+                  <span>Clear</span>
+                </button>
+              </div>
+            </div>
+            
+            {/* Popular Coastal Cities Modal */}
+            {showLocationModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-gray-800">Popular Coastal Cities</h3>
+                    <button
+                      onClick={() => setShowLocationModal(false)}
+                      className="text-gray-500 hover:text-gray-700 text-2xl"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {WEATHER_CONFIG.DEFAULT_COASTAL_CITIES.map((city) => (
+                      <button
+                        key={city}
+                        onClick={() => {
+                          setLocation(city);
+                          setShowLocationModal(false);
+                        }}
+                        className="p-3 text-left border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all"
+                      >
+                        <div className="font-medium text-gray-800">{city.split(',')[0]}</div>
+                        <div className="text-sm text-gray-500">{city.split(',')[1]}</div>
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <div className="mt-4 text-center">
+                    <p className="text-sm text-gray-600">
+                      Or type any city name above to get real-time weather data
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Weather Display */}
+          {!location ? (
+            <div className="text-center py-12">
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-8 max-w-2xl mx-auto">
+                <div className="text-6xl mb-4">🌍</div>
+                <h3 className="text-2xl font-bold text-blue-800 mb-4">Select a City First</h3>
+                <p className="text-blue-700 mb-6">
+                  Please enter a city name above and click "Get Weather" to see the 5 weather parameters:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left max-w-lg mx-auto">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">🌡️</span>
+                    <span className="text-blue-800">Air Temperature</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">💧</span>
+                    <span className="text-blue-800">Humidity</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">🌧️</span>
+                    <span className="text-blue-800">Precipitation</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">👁️</span>
+                    <span className="text-blue-800">Visibility</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">💨</span>
+                    <span className="text-blue-800">Wind Speed</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : loading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="mt-4 text-gray-600">Fetching weather data for {location}...</p>
+            </div>
+          ) : weatherData ? (
+            <>
+              {/* Weather Parameters Header */}
+              <div className="text-center mb-8">
+                <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
+                  <div className="flex items-center justify-center space-x-2 text-green-800">
+                    <span className="text-2xl">✅</span>
+                    <span className="font-medium">Successfully loaded weather data!</span>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                  🌤️ Weather Parameters for {weatherData.cityName || weatherData.name}
+                </h3>
+                <p className="text-gray-600">
+                  Real-time data from OpenWeatherMap API
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                {/* Current Temperature */}
+                <div className="bg-white rounded-2xl p-6 shadow-lg border-l-4 border-red-500">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800">Air Temperature</h3>
+                    <span className="text-2xl">🌡️</span>
+                  </div>
+                  <div className="text-3xl font-bold text-red-600 mb-2">
+                    {weatherData.main?.temp}°C
+                  </div>
+                  <p className="text-gray-600 text-sm">
+                    Feels like {weatherData.main?.feels_like || weatherData.main?.temp}°C
+                  </p>
+                </div>
+
+                {/* Humidity */}
+                <div className="bg-white rounded-2xl p-6 shadow-lg border-l-4 border-blue-500">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800">Humidity</h3>
+                    <span className="text-2xl">💧</span>
+                  </div>
+                  <div className="text-3xl font-bold text-blue-600 mb-2">
+                    {weatherData.main?.humidity}%
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${weatherData.main?.humidity}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                
+
+                              {/* Precipitation */}
+              <div className="bg-white rounded-2xl p-6 shadow-lg border-l-4 border-green-500">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800">Precipitation</h3>
+                  <span className="text-2xl">🌧️</span>
+                </div>
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  {weatherData.currentPrecipitation || 0} mm
+                </div>
+                <p className="text-gray-600 text-sm">
+                  Current rainfall
+                </p>
+                {weatherData.hourlyPrecipitation > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    24h forecast: {weatherData.hourlyPrecipitation.toFixed(1)} mm
+                  </p>
+                )}
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                  <div 
+                    className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min((weatherData.currentPrecipitation / 50) * 100, 100)}%` }}
+                  ></div>
+                </div>
+
+              </div>
+
+                {/* Visibility */}
+                <div className="bg-white rounded-2xl p-6 shadow-lg border-l-4 border-purple-500">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800">Visibility</h3>
+                    <span className="text-2xl">👁️</span>
+                  </div>
+                  <div className="text-3xl font-bold text-purple-600 mb-2">
+                    {(weatherData.visibility / 1000).toFixed(1)} km
+                  </div>
+                  <p className="text-gray-600 text-sm">
+                    Atmospheric visibility
+                  </p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div 
+                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${Math.min((weatherData.visibility / 10000) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+
+                </div>
+
+                {/* Wind Speed */}
+                <div className="bg-white rounded-2xl p-6 shadow-lg border-l-4 border-yellow-500">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800">Wind Speed</h3>
+                    <span className="text-2xl">💨</span>
+                  </div>
+                  <div className="text-3xl font-bold text-yellow-600 mb-2">
+                    {weatherData.wind?.speed} m/s
+                  </div>
+                  <p className="text-gray-600 text-sm">
+                    {(weatherData.wind?.speed * 3.6).toFixed(1)} km/h
+                  </p>
+                </div>
+              </div>
+
+              {/* Current Weather Summary */}
+              <div className="mt-8 bg-white rounded-2xl p-6 shadow-lg max-w-4xl mx-auto">
+                <div className="flex items-center justify-center space-x-6">
+                  <div className="text-6xl">
+                    {getWeatherIcon(weatherData.weatherIcon)}
+                  </div>
+                  <div className="text-center">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                      {weatherData.cityName || weatherData.name || location}
+                    </h3>
+                    <p className="text-xl text-gray-600 capitalize">
+                      {weatherData.weatherDescription}
+                    </p>
+                    <p className="text-gray-500 mt-2">
+                      Last updated: {new Date().toLocaleTimeString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Weather Alerts Section */}
+              {weatherData && getWeatherAlerts().length > 0 && (
+                <div className="mt-6 bg-red-50 border border-red-200 rounded-2xl p-6 max-w-4xl mx-auto">
+                  <h3 className="text-xl font-bold text-red-800 mb-4 flex items-center">
+                    <span className="mr-2">⚠️</span>
+                    Weather Alerts
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {getWeatherAlerts().map((alert, index) => (
+                      <div key={index} className="flex items-center p-3 bg-red-100 rounded-lg">
+                        <span className="text-red-600 mr-2">🚨</span>
+                        <span className="text-red-800 font-medium">{alert.message}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Additional Weather Info */}
+              {weatherData && (
+                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-2xl p-6 max-w-4xl mx-auto">
+                  <h3 className="text-xl font-bold text-blue-800 mb-4 flex items-center">
+                    <span className="mr-2">ℹ️</span>
+                    Additional Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {weatherData.main?.pressure} hPa
+                      </div>
+                      <div className="text-sm text-blue-700">Atmospheric Pressure</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {weatherData.main?.feels_like?.toFixed(1)}°C
+                      </div>
+                      <div className="text-sm text-blue-700">Feels Like</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {weatherData.wind?.deg || 0}°
+                      </div>
+                      <div className="text-sm text-blue-700">Wind Direction</div>
+                    </div>
+                  </div>
+                  
+                  {/* Data Quality Indicator */}
+                  <div className="mt-4 pt-4 border-t border-blue-200">
+                    <div className="text-center">
+                      <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                        <span className="mr-2">✅</span>
+                        Real-time data from OpenWeatherMap API
+                      </div>
+                      <p className="text-xs text-blue-600 mt-2">
+                        Last updated: {new Date().toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 max-w-2xl mx-auto">
+                <div className="text-4xl mb-4">🌤️</div>
+                <h3 className="text-xl font-bold text-yellow-800 mb-2">Weather Data Unavailable</h3>
+                <p className="text-yellow-700 mb-4">
+                  Unable to fetch weather data. This could be due to:
+                </p>
+                <ul className="text-sm text-yellow-600 text-left max-w-md mx-auto space-y-1">
+                  <li>• Invalid city name or location</li>
+                  <li>• Network connectivity issues</li>
+                  <li>• API service temporarily unavailable</li>
+                  <li>• API key configuration issues</li>
+                </ul>
+                <button
+                  onClick={() => fetchWeatherData(location)}
+                  className="mt-4 bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
