@@ -17,13 +17,9 @@
     "next": "15.5.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-<<<<<<< HEAD
+    "react-hot-toast": "^2.6.0",
     "react-leaflet": "^5.0.0",
     "recharts": "^3.1.2"
-=======
-    "react-hot-toast": "^2.6.0",
-    "react-leaflet": "^5.0.0"
->>>>>>> ca2104e01163f143225ed59c275e6c260eb6ca46
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
