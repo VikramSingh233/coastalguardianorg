@@ -40,6 +40,11 @@ const getuser = async () => {
   useEffect(() => {
     getuser();
   }, []);
+ 
+
+useEffect(()=>{
+  predict(sample);
+})
 
   const [searchResults, setSearchResults] = useState(null);
   const [userData, setUserData] = useState({
@@ -56,6 +61,9 @@ const getuser = async () => {
       seaLevelRise: false
     }
   });
+
+
+
 
 
   const [editFormData, setEditFormData] = useState({ ...userData });
@@ -729,6 +737,7 @@ const getuser = async () => {
           </div>
         </div>
       </div>
+      
 
       {/* Overlay for mobile sidebars */}
       {(sidebarOpen || notificationSidebarOpen) && (
