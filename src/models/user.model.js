@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
     trim: true,
   },
 
@@ -39,7 +38,7 @@ const userSchema = new mongoose.Schema({
   notificationPreference: {
     floodingAlerts: {
       selected: { type: Boolean, default: false },
-      messages: [{ message: { type: String } }], // ML model-based messages
+      messages: [{ message: { type: String } }],
     },
     cyclonicalActivity: {
       selected: { type: Boolean, default: false },
@@ -62,6 +61,4 @@ const userSchema = new mongoose.Schema({
   ],
 });
 
-
-export default mongoose.models.User ||  mongoose.model("User", userSchema);
-
+export default mongoose.models.User || mongoose.model("User", userSchema);

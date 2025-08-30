@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 
-// dynamically import to avoid "window is not defined" in Next.js SSR
 const MapContainer = dynamic(
   () => import("react-leaflet").then(mod => mod.MapContainer),
   { ssr: false }
