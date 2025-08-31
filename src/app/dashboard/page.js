@@ -1,9 +1,69 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 
+
+const places = [
+  {"District":"Kachchh","Latitude":23.2,"Longitude":69.5},
+  {"District":"Bharuch","Latitude":21.7,"Longitude":73.0},
+  {"District":"Jamnagar","Latitude":22.5,"Longitude":70.1},
+  {"District":"Bhavnagar","Latitude":21.8,"Longitude":72.1},
+  {"District":"Devbhumi Dwarka","Latitude":22.2,"Longitude":68.9},
+  {"District":"Surat","Latitude":21.2,"Longitude":72.8},
+  {"District":"Valsad","Latitude":20.6,"Longitude":72.9},
+  {"District":"Navsari","Latitude":20.9,"Longitude":72.9},
+  {"District":"Dang","Latitude":20.8,"Longitude":73.4},
+  {"District":"Ahmedabad (coastal part)","Latitude":23.0,"Longitude":72.5},
+  {"District":"Mumbai","Latitude":19.0,"Longitude":72.8},
+  {"District":"Raigad","Latitude":18.4,"Longitude":73.0},
+  {"District":"Ratnagiri","Latitude":16.9,"Longitude":73.3},
+  {"District":"Sindhudurg","Latitude":16.2,"Longitude":73.7},
+  {"District":"Thane","Latitude":19.3,"Longitude":72.9},
+  {"District":"Palghar","Latitude":19.7,"Longitude":72.7},
+  {"District":"Goa (North)","Latitude":15.6,"Longitude":73.8},
+  {"District":"Goa (South)","Latitude":15.2,"Longitude":74.0},
+  {"District":"Uttara Kannada","Latitude":14.9,"Longitude":74.3},
+  {"District":"Dakshina Kannada","Latitude":12.9,"Longitude":74.9},
+  {"District":"Udupi","Latitude":13.3,"Longitude":74.7},
+  {"District":"Kasaragod","Latitude":12.5,"Longitude":75.0},
+  {"District":"Kannur","Latitude":11.9,"Longitude":75.4},
+  {"District":"Kozhikode","Latitude":11.3,"Longitude":75.8},
+  {"District":"Malappuram","Latitude":11.0,"Longitude":76.1},
+  {"District":"Thrissur","Latitude":10.5,"Longitude":76.2},
+  {"District":"Ernakulam","Latitude":10.0,"Longitude":76.3},
+  {"District":"Alappuzha","Latitude":9.5,"Longitude":76.3},
+  {"District":"Kollam","Latitude":9.0,"Longitude":76.6},
+  {"District":"Thiruvananthapuram","Latitude":8.5,"Longitude":77.0},
+  {"District":"Nagapattinam","Latitude":10.8,"Longitude":79.8},
+  {"District":"Cuddalore","Latitude":11.7,"Longitude":79.8},
+  {"District":"Chennai","Latitude":13.1,"Longitude":80.3},
+  {"District":"Kanchipuram","Latitude":12.8,"Longitude":79.7},
+  {"District":"Thiruvarur","Latitude":10.8,"Longitude":79.6},
+  {"District":"Pondicherry","Latitude":11.9,"Longitude":79.8},
+  {"District":"Karaikal","Latitude":10.9,"Longitude":79.8},
+  {"District":"East Godavari","Latitude":17.0,"Longitude":82.3},
+  {"District":"West Godavari","Latitude":16.8,"Longitude":81.7},
+  {"District":"Visakhapatnam","Latitude":17.7,"Longitude":83.3},
+  {"District":"Krishna","Latitude":16.8,"Longitude":80.6},
+  {"District":"Nellore","Latitude":14.5,"Longitude":79.9},
+  {"District":"Srikakulam","Latitude":18.3,"Longitude":83.9},
+  {"District":"Ganjam","Latitude":19.3,"Longitude":85.0},
+  {"District":"Balasore","Latitude":21.5,"Longitude":86.9},
+  {"District":"Jagatsinghpur","Latitude":20.3,"Longitude":86.2},
+  {"District":"Kendrapara","Latitude":20.5,"Longitude":86.4},
+  {"District":"Bhadrak","Latitude":21.1,"Longitude":86.8},
+  {"District":"Puri","Latitude":19.8,"Longitude":85.8},
+  {"District":"Bhubaneswar","Latitude":20.3,"Longitude":85.8},
+  {"District":"North 24 Parganas","Latitude":22.9,"Longitude":88.5},
+  {"District":"South 24 Parganas","Latitude":22.0,"Longitude":88.4},
+  {"District":"Haora","Latitude":22.6,"Longitude":88.3},
+  {"District":"Purba Medinipur","Latitude":21.7,"Longitude":87.7},
+  {"District":"Paschim Medinipur","Latitude":22.4,"Longitude":87.0},
+  {"District":"East Midnapore","Latitude":21.8,"Longitude":87.6}
+]
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [notificationSidebarOpen, setNotificationSidebarOpen] = useState(false);
@@ -12,9 +72,70 @@ export default function DashboardPage() {
   const [editMode, setEditMode] = useState(false);
   const [searchMode, setSearchMode] = useState(false);
   const [searchData, setSearchData] = useState({
-    country: '',
+    // country: '',
     state: ''
   });
+// const[message,setmessage]=useState("");
+const [message, setMessage] = useState("");
+  const [coords, setCoords] = useState(null);
+  const [prediction, setPrediction] = useState(null);
+const findCoordinates = () => {
+  const place = places.find(
+    (p) => p.District.toLowerCase() === searchData.state?.toLowerCase()
+  );
+  if (place) {
+    setCoords({ lat: place.Latitude, lng: place.Longitude });
+  } else {
+    setCoords(null);
+    toast.error("District not found!");
+  }
+};
+
+useEffect(() => {
+  if (searchData.state) {
+    findCoordinates();
+  }
+}, [searchData.state]);
+
+
+const getPrediction = async () => {
+  if (!coords) {
+    toast.error("Please select a valid district first!");
+    return;
+  }
+
+  try {
+    const res = await axios.get(
+      `https://coastalml.onrender.com/api/predict_from_coords?latitude=${coords.lat}&longitude=${coords.lng}`
+    );
+
+    const pred = res.data.prediction;
+    setPrediction(pred);
+
+    // set message based on prediction
+    if (pred == 1) {
+      setMessage("Your area is at risk of flooding. Please take necessary actions to prevent damage.");
+    } else if (pred == 2) {
+      setMessage("Your area is at risk of Cyclonical Activity. Please take necessary precautions.");
+    } else if (pred == 3) {
+      setMessage("Your area is at risk of high sea level rise. Please take necessary precautions.");
+    } else {
+      setMessage("Your area is out of risk.");
+    }
+
+  } catch (error) {
+    console.error("Error fetching prediction:", error);
+
+    if (error.response) {
+      console.error("Backend Error:", error.response.data);
+    } else if (error.request) {
+      console.error("No response received from backend");
+    } else {
+      console.error("Error setting up request:", error.message);
+    }
+  }
+};
+
 
 const getuser = async () => {
   try {
@@ -31,9 +152,9 @@ const getuser = async () => {
     if (!userRes.ok) throw new Error(data2.error);
 
     setUserData(data2.user);
-    console.log(data2.user);
+    // console.log(data2.user);
   } catch (err) {
-    console.error("Error fetching user:", err.message);
+    // console.error("Error fetching user:", err.message);
   }
 };
 
@@ -42,9 +163,9 @@ const getuser = async () => {
   }, []);
  
 
-useEffect(()=>{
-  predict(sample);
-})
+// useEffect(()=>{
+//   predict(sample);
+// })
 
   const [searchResults, setSearchResults] = useState(null);
   const [userData, setUserData] = useState({
@@ -426,20 +547,7 @@ useEffect(()=>{
           
           <form onSubmit={handleSearch} className="mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 mb-2" htmlFor="searchCountry">
-                  Country
-                </label>
-                <input
-                  id="searchCountry"
-                  type="text"
-                  name="country"
-                  value={searchData.country}
-                  onChange={handleSearchInputChange}
-                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
-                  placeholder="Enter country name"
-                />
-              </div>
+             
               <div>
                 <label className="block text-gray-700 mb-2" htmlFor="searchState">
                   State/Province
@@ -450,7 +558,7 @@ useEffect(()=>{
                   name="state"
                   value={searchData.state}
                   onChange={handleSearchInputChange}
-                  className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 text-black rounded-lg bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
                   placeholder="Enter state name"
                 />
               </div>
@@ -458,34 +566,21 @@ useEffect(()=>{
             
             <button
               type="submit"
+              onClick={getPrediction}
               className="bg-gradient-to-r from-blue-600 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-teal-700 transition-all"
             >
               Search
             </button>
           </form>
           
-          {searchResults && (
+          {prediction && (
             <div>
               <h3 className="text-xl font-semibold text-gray-800 mb-4">
-                Threat Assessment for {searchResults.state ? `${searchResults.state}, ` : ''}{searchResults.country}
-              </h3>
+  Threat Assessment for {searchData.state} :- {message}
+</h3>
+
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {searchResults.threats.map((threat, index) => (
-                  <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-gray-800 mb-2 capitalize">{threat.type.replace(/([A-Z])/g, ' $1')}</h4>
-                    <div className="flex items-center mb-2">
-                      <span className={`w-3 h-3 rounded-full mr-2 ${
-                        threat.level === 'High' ? 'bg-red-500' :
-                        threat.level === 'Moderate' ? 'bg-yellow-500' :
-                        'bg-green-500'
-                      }`}></span>
-                      <span className="text-gray-700">Level: {threat.level}</span>
-                    </div>
-                    <p className="text-gray-600 text-sm">{threat.advice}</p>
-                  </div>
-                ))}
-              </div>
+              
             </div>
           )}
         </div>
@@ -495,7 +590,9 @@ useEffect(()=>{
     // Default overview content
     return (
       <div>
+        
         <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+          
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Welcome to COASTAL Guardian</h2>
           <p className="text-gray-700 mb-6">
             Your personalized coastal threat dashboard. Monitor alerts, check conditions in your area, and stay informed about potential risks.
@@ -514,12 +611,7 @@ useEffect(()=>{
           >
             Search Threat Information for Other Locations
           </button>
-           <button 
-            onClick={() => router.push('/map')}
-            className="bg-gradient-to-r from-blue-600 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-teal-700 transition-all ml-5"
-          >
-            Choose directly from the map
-          </button>
+      
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -590,6 +682,13 @@ useEffect(()=>{
               </div>
               <h1 className="text-xl font-bold text-gray-800">COASTAL Guardian</h1>
             </div>
+            <nav className="hidden md:flex space-x-6 ml-50">
+            <a  onClick={() => router.push('/')} className="text-gray-600 font-medium cursor-pointer">Home</a>
+            <a  onClick={() =>router.push('/dashboard')} className="text-blue-600 font-medium cursor-pointer">Dashboard</a>
+            <a  onClick={() => window.scrollTo({ top: 450, behavior: 'smooth' })} className="text-gray-600 hover:text-blue-600 cursor-pointer">Services</a>
+       
+            <a href="/contact" className="text-gray-600 hover:text-blue-600">Contact</a>
+          </nav>
           </div>
           
           <div className="flex items-center space-x-4">
@@ -752,7 +851,3 @@ useEffect(()=>{
     </div>
   );
 }
-
-
-
-

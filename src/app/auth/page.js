@@ -26,12 +26,22 @@ const handleSubmit = async (e) => {
 
   if (isLogin) {
     try {
-      await axios.post("/api/login", {
-        email: formData.email,
-        password: formData.password,
-      });
-      toast.success("Login successful!");
-      router.push("/onboardingdetails");
+await axios.post("/api/login", {
+  email: formData.email,
+  password: formData.password,
+});
+
+toast.success("Login successful!");
+
+// now just call getme (it will use token from cookies)
+const res = await axios.get("/api/getme");
+
+if (res.data.user.organization === "") {
+  router.push("/onboardingdetails");
+} else {
+  router.push("/dashboard");
+}
+
     } catch (err) {
       // console.error(err.response?.data || err.message);
       toast.error("Login failed");
